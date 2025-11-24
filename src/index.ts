@@ -1,52 +1,41 @@
-import express from 'express'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import express from "express";
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const app = express();
 
-const app = express()
+// Middleware para leer JSON del body
+app.use(express.json());
 
-// Home route - HTML
-app.get('/', (req, res) => {
-  res.type('html').send(`
-    <!doctype html>
-    <html>
-      <head>
-        <meta charset="utf-8"/>
-        <title>Express on Vercel</title>
-        <link rel="stylesheet" href="/style.css" />
-      </head>
-      <body>
-        <nav>
-          <a href="/">Home</a>
-          <a href="/about">About</a>
-          <a href="/api-data">API Data</a>
-          <a href="/healthz">Health</a>
-        </nav>
-        <h1>Welcome to Express on Vercel 🚀</h1>
-        <p>This is a minimal example without a database or forms.</p>
-        <img src="/logo.png" alt="Logo" width="120" />
-      </body>
-    </html>
-  `)
-})
+// 🔐 Token que vas a usar en Meta > Webhooks
+const VERIFY_TOKEN = "FUNSE_VERIFY_TOKEN_123";
 
-app.get('/about', function (req, res) {
-  res.sendFile(path.join(__dirname, '..', 'components', 'about.htm'))
-})
+// Ruta simple para probar que el servidor funciona
+app.get("/", (req, res) => {
+  res.send("FUNSE WhatsApp API funcionando ✅");
+});
 
-// Example API endpoint - JSON
-app.get('/api-data', (req, res) => {
-  res.json({
-    message: 'Here is some sample API data',
-    items: ['apple', 'banana', 'cherry'],
-  })
-})
+// ✅ VERIFICACIÓN DEL WEBHOOK (GET)
+app.get("/webhook", (req, res) => {
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
 
-// Health check
-app.get('/healthz', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() })
-})
+  if (mode === "subscribe" && token === VERIFY_TOKEN) {
+    console.log("✅ Webhook verificado correctamente");
+    return res.status(200).send(challenge);
+  } else {
+    console.log("❌ Error verificando webhook");
+    return res.sendStatus(403);
+  }
+});
 
-export default app
+// 📩 RECEPCIÓN DE MENSAJES (POST)
+app.post("/webhook", (req, res) => {
+  console.log("📩 Evento recibido de WhatsApp:");
+  console.log(JSON.stringify(req.body, null, 2));
+
+  // Aquí luego podrás procesar el mensaje y responder
+
+  return res.sendStatus(200);
+});
+
+export default app;
